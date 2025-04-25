@@ -1,6 +1,8 @@
 import re
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
+import os
+import hashlib
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
@@ -15,14 +17,14 @@ def extract_next_links(url, resp):
     # resp.raw_response: this is where the page actually is. More specifically, the raw_response has two parts:
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
-	if resp.status == 200:
-		try:
-			soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
-			urls = [a['href'] for a in soup.find_all('a', href=True)]
-			return urls
-		except Exception as e:
-			print(f"Error during parsing: {e}")
-			return None
+    if resp.status == 200:
+        try:
+            soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
+            urls = [a['href'] for a in soup.find_all('a', href=True)]
+            return urls
+        except Exception as e:
+            print(f"Error during parsing: {e}")
+            return None
 
     return list()
 
@@ -30,10 +32,23 @@ def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
+
     try:
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
+
+        # netloc is the domain of the parsed url
+        netloc = parsed.netloc.lower()
+        path = parsed.path.lower()
+        
+        if not (netloc.endswith('.ics.uci.edu') or
+                netloc.endswith('.cs.uci.edu') or
+                netloc.endswith('.informatics.uci.edu') or
+                netloc.endswith('.stat.uci.edu') or
+                (netloc == 'today.uci.edu' and path.startswith('/department/information_computer_sciences'))):
+                return False
+                
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
@@ -47,3 +62,17 @@ def is_valid(url):
     except TypeError:
         print ("TypeError for ", parsed)
         raise
+
+
+
+
+
+
+
+
+
+
+
+
+
+
