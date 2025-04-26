@@ -1,12 +1,12 @@
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin, urldefrag
 from bs4 import BeautifulSoup
-import os
-import hashlib
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
+
+visited_urls = set()
 
 def extract_next_links(url, resp):
     # Implementation required.
@@ -17,14 +17,20 @@ def extract_next_links(url, resp):
     # resp.raw_response: this is where the page actually is. More specifically, the raw_response has two parts:
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
-    if resp.status == 200:
+    if resp.status == 200 and resp.raw_response.content:
         try:
             soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
-            urls = [a['href'] for a in soup.find_all('a', href=True)]
-            return urls
+            urls = [urljoin(url, urldefrag(a['href'])[0]) for a in soup.find_all('a', href=True)]
+            res = []
+            for url in urls:
+                if url not in visited_urls:
+                    visited_urls.add(url)
+                    res.append(url)
+            return res
+
         except Exception as e:
             print(f"Error during parsing: {e}")
-            return None
+            return list()
 
     return list()
 
@@ -57,7 +63,9 @@ def is_valid(url):
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz"
+            + r"|mpg|lif)$"
+            , parsed.path.lower())
 
     except TypeError:
         print ("TypeError for ", parsed)
