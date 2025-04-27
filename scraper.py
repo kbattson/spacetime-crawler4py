@@ -1,12 +1,12 @@
 import re
 from urllib.parse import urlparse, urljoin, urldefrag
 from bs4 import BeautifulSoup
+import pagedata
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 
-visited_urls = set()
 
 def extract_next_links(url, resp):
     # Implementation required.
@@ -17,16 +17,16 @@ def extract_next_links(url, resp):
     # resp.raw_response: this is where the page actually is. More specifically, the raw_response has two parts:
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
+
+    conn = pagedata.setup_db()
+
     if resp.status == 200 and resp.raw_response.content:
         try:
+            pagedata.store_page(conn, resp.url, resp.raw_response.content)
+            
             soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
             urls = [urljoin(url, urldefrag(a['href'])[0]) for a in soup.find_all('a', href=True)]
-            res = []
-            for url in urls:
-                if url not in visited_urls:
-                    visited_urls.add(url)
-                    res.append(url)
-            return res
+            return [url for url in urls if not pagedata.is_visited(conn, url)]
 
         except Exception as e:
             print(f"Error during parsing: {e}")
