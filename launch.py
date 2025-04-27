@@ -5,8 +5,14 @@ from utils.server_registration import get_cache_server
 from utils.config import Config
 from crawler import Crawler
 
+import pagedata
+
 
 def main(config_file, restart):
+    #added
+    pagedata.reset_db()
+    pagedata.init_db()
+
     cparser = ConfigParser()
     cparser.read(config_file)
     config = Config(cparser)

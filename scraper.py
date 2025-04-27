@@ -2,11 +2,23 @@ import re
 from urllib.parse import urlparse, urljoin, urldefrag
 from bs4 import BeautifulSoup
 import pagedata
+import sqlite3
+
+'''
+TODO
+- implement politeness delays, might be included in base crawler not sure
+- detect and avoid infinite traps
+    - calendars
+- avoid URLS with 200 status but no data (blacklist maybe? not sure)
+- avoid crawling very large files
+- exact/near exact page similariy detection
+
+- write program to tokenize and extract metrics from crawler_data.db
+'''
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
-
 
 def extract_next_links(url, resp):
     # Implementation required.
@@ -18,21 +30,23 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
 
-    conn = pagedata.setup_db()
+    with sqlite3.connect('crawler_data.db') as conn:
 
-    if resp.status == 200 and resp.raw_response.content:
-        try:
-            pagedata.store_page(conn, resp.url, resp.raw_response.content)
-            
-            soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
-            urls = [urljoin(url, urldefrag(a['href'])[0]) for a in soup.find_all('a', href=True)]
-            return [url for url in urls if not pagedata.is_visited(conn, url)]
+        if resp.status == 200 and resp.raw_response.content:
+            try:
+                pagedata.store_page(conn, resp.url, resp.raw_response.content)
+                
+                soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
+                urls = [urljoin(url, urldefrag(a['href'])[0]) for a in soup.find_all('a', href=True)]
+                return [url for url in urls if not pagedata.is_visited(conn, url) 
+                        and not pagedata.is_blacklisted(conn, url)]
 
-        except Exception as e:
-            print(f"Error during parsing: {e}")
-            return list()
-
-    return list()
+            except Exception as e:
+                print(f"Error during parsing: {e}")
+                return []
+        else:
+            pagedata.blacklist_url(conn, url, resp.error)
+            return []
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
@@ -64,7 +78,10 @@ def is_valid(url):
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz"
-            + r"|mpg|lif)$"
+            # .mpg is video/audio format
+            # .lif is collection of images
+            # apk is android something something 
+            + r"|mpg|lif|apk)$"
             , parsed.path.lower())
 
     except TypeError:
