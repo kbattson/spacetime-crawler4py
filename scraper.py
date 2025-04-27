@@ -4,8 +4,8 @@ from bs4 import BeautifulSoup
 import pagedata
 import sqlite3
 
+#TODO
 '''
-TODO
 - implement politeness delays, might be included in base crawler not sure
 - detect and avoid infinite traps
     - calendars

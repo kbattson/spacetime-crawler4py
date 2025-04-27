@@ -46,7 +46,7 @@ def reset_db():
     conn = sqlite3.connect('crawler_data.db')
     c = conn.cursor()
     while True:
-        response = input("Reset crawler page data? [y/n] ")
+        response = input("Reset crawler page data? (reset if starting crawl from scratch) [y/n] ")
         if response == 'y':
             c.execute('DROP TABLE IF EXISTS pages')
             break
@@ -54,7 +54,7 @@ def reset_db():
             break
 
     while True:
-        response = input("Reset crawler blacklist? !!DON'T RESET ON NEW CRAWLS!! [y/n] ")
+        response = input("Reset crawler blacklist? (don't reset, blacklist should be kept over multiple crawls) [y/n] ")
         if response == 'y':
             c.execute('DROP TABLE IF EXISTS blacklist')
             break
