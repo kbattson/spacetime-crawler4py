@@ -3,7 +3,6 @@ import sqlite3
 def init_db():
     conn = sqlite3.connect('crawler_data.db')
     c = conn.cursor()
-    c.execute('DROP TABLE IF EXISTS pages')
     c.execute('''
     CREATE TABLE IF NOT EXISTS pages (
         url TEXT PRIMARY KEY,
