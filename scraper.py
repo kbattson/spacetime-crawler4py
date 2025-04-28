@@ -41,12 +41,33 @@ def extract_next_links(url, resp):
                 urls = {url.lower() for url in urls}
                 urls = {url[:url.find('?')] for url in urls} # strip query
 
-                print(urls)
-                print()
-                url_last_bits = {url.split('/')[-1] for url in urls}
-                urls = {url for url in urls if url.split('/'[-1]) not in url_last_bits}
-                print(urls)
-                print()
+                filtered_urls = set()
+                url_list = list(urls)
+                
+                for i, url1 in enumerate(url_list):
+                    parsed1 = urlparse(url1)
+                    path1 = parsed1.path.rstrip('/')
+                    add_url = True
+                    
+                    for j, url2 in enumerate(url_list):
+                        if i == j:  # Skip comparing with self
+                            continue
+                        
+                        parsed2 = urlparse(url2)
+                        path2 = parsed2.path.rstrip('/')
+                        
+                        # Check if same domain and one path is prefix of the other
+                        if (parsed1.netloc == parsed2.netloc and 
+                            (path1.startswith(path2 + '/') or path2.startswith(path1 + '/'))):
+                            # Keep the shorter URL
+                            if len(path1) > len(path2):
+                                add_url = False
+                                break
+                    
+                    if add_url:
+                        filtered_urls.add(url1)
+                
+                urls = filtered_urls
                
                 return [url for url in urls if not pagedata.is_visited(conn, url) 
                         and not pagedata.is_blacklisted(conn, url)]
