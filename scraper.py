@@ -38,6 +38,9 @@ def extract_next_links(url, resp):
                 
                 soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
                 urls = [urljoin(url, urldefrag(a['href'])[0]) for a in soup.find_all('a', href=True)]
+                urls = [url.lower() for url in urls]
+                urls = [url[:url.find('?')] for url in urls] # strip query
+                
                 return [url for url in urls if not pagedata.is_visited(conn, url) 
                         and not pagedata.is_blacklisted(conn, url)]
 
@@ -68,7 +71,10 @@ def is_valid(url):
                 netloc.endswith('.stat.uci.edu') or
                 (netloc == 'today.uci.edu' and path.startswith('/department/information_computer_sciences'))):
                 return False
-                
+
+        if 'account' in netloc:
+            return False
+        
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
@@ -81,7 +87,9 @@ def is_valid(url):
             # .mpg is video/audio format
             # .lif is collection of images
             # apk is android something something 
-            + r"|mpg|lif|apk)$"
+            # pd = pure datak
+            # jp = jpeg
+            + r"|mpg|lif|apk|pd|jp)$"
             , parsed.path.lower())
 
     except TypeError:
