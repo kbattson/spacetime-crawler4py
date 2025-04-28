@@ -32,7 +32,7 @@ def extract_next_links(url, resp):
 
     with sqlite3.connect('crawler_data.db') as conn:
 
-        if resp.status == 200 and resp.raw_response.content:
+        if resp.status == 200 and resp.raw_response and resp.raw_response.content:
             try:
                 pagedata.store_page(conn, resp.url, resp.raw_response.content)
                 
