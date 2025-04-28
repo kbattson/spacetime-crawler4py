@@ -41,12 +41,16 @@ def extract_next_links(url, resp):
                 urls = [url.lower() for url in urls]
                 urls = [url[:url.find('?')] for url in urls] # strip query
 
-                print(urls)
-                print()
-                url_last_bits = [url.split('/')[-1] for url in urls]
-                urls = [url for url in urls if url.split('/'[-1]) not in url_last_bits]
-                print(urls)
-                print()
+                seen_last_bits = set()
+                unique_urls = []
+
+                for url in urls:
+                    last_bit = url.split('/')[-1]
+                    if last_bit not in seen_last_bits:
+                        seen_last_bits.add(last_bit)
+                        unique_urls.append(url)
+
+                urls = unique_urls
                
                 return [url for url in urls if not pagedata.is_visited(conn, url) 
                         and not pagedata.is_blacklisted(conn, url)]
