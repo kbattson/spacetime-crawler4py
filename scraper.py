@@ -37,14 +37,14 @@ def extract_next_links(url, resp):
                 pagedata.store_page(conn, resp.url, resp.raw_response.content)
                 
                 soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
-                urls = [urljoin(url, urldefrag(a['href'])[0]) for a in soup.find_all('a', href=True)]
-                urls = [url.lower() for url in urls]
-                urls = [url[:url.find('?')] for url in urls] # strip query
+                urls = {urljoin(url, urldefrag(a['href'])[0]) for a in soup.find_all('a', href=True)}
+                urls = {url.lower() for url in urls}
+                urls = {url[:url.find('?')] for url in urls} # strip query
 
                 print(urls)
                 print()
-                url_last_bits = [url.split('/')[-1] for url in urls]
-                urls = [url for url in urls if url.split('/'[-1]) not in url_last_bits]
+                url_last_bits = {url.split('/')[-1] for url in urls}
+                urls = {url for url in urls if url.split('/'[-1]) not in url_last_bits}
                 print(urls)
                 print()
                
