@@ -39,7 +39,11 @@ def is_blacklisted(conn, url):
 
 def blacklist_url(conn, url, error):
     c = conn.cursor()
-    c.execute("INSERT INTO blacklist (url, error) VALUES (?, ?)", (url, error))
+    try:
+        c.execute("INSERT INTO blacklist (url, error) VALUES (?, ?)", (url, error))
+    except sqlite3.IntegrityError:
+        # url already in blacklist (kind of a problem: why did it try and blacklist and blisted page???)
+        pass
     conn.commit()
 
 def reset_db():

@@ -20,6 +20,15 @@ def scraper(url, resp):
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 
+def normalize_url(url):
+    url, _ = urldefrag(url)
+    url = url.lower()
+    if '?' in url:
+        url = url[:url.find('?')]
+    return url
+
+previous_call_urls = []
+
 def extract_next_links(url, resp):
     # Implementation required.
     # url: the URL that was used to get the page
@@ -30,36 +39,46 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
 
+    global previous_call_urls
+
     with sqlite3.connect('crawler_data.db') as conn:
 
         if resp.status == 200 and resp.raw_response and resp.raw_response.content:
             try:
-                pagedata.store_page(conn, resp.url, resp.raw_response.content)
+                pagedata.store_page(conn, normalize_url(resp.url), resp.raw_response.content)
                 
                 soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
-                urls = [urljoin(url, urldefrag(a['href'])[0]) for a in soup.find_all('a', href=True)]
-                urls = [url.lower() for url in urls]
-                urls = [url[:url.find('?')] for url in urls] # strip query
+                urls = [normalize_url(urljoin(url, a['href'])) for a in soup.find_all('a', href=True)]
+                urls = list(set(urls))
 
-                seen_last_bits = set()
-                unique_urls = []
+                # trap detection
 
-                for url in urls:
-                    last_bit = url.split('/')[-1]
-                    if last_bit not in seen_last_bits:
-                        seen_last_bits.add(last_bit)
-                        unique_urls.append(url)
+                # checking for one-off traps
+                # generally found in chained calls of this function so we store the last call
+                # does there exist a url in the previous call that is +1 length and otherwise the same?
+                filtered_urls = []
+                for curr_url in urls:
+                    is_trap = False
+                    for prev_url in previous_call_urls:
+                        if len(prev_url) - 1 == len(curr_url) and curr_url in prev_url:
+                            is_trap = True
+                            break
 
-                urls = unique_urls
-               
-                return [url for url in urls if not pagedata.is_visited(conn, url) 
+                    if not is_trap:
+                        filtered_urls.append(curr_url)
+
+                previous_call_urls = filtered_urls.copy()
+                urls = filtered_urls
+
+                return [url for url in urls if 
+                        not pagedata.is_visited(conn, url) 
                         and not pagedata.is_blacklisted(conn, url)]
 
             except Exception as e:
                 print(f"Error during parsing: {e}")
                 return []
         else:
-            pagedata.blacklist_url(conn, url, resp.error)
+            pagedata.blacklist_url(conn, normalize_url(url), resp.error)
             return []
 
 def is_valid(url):
