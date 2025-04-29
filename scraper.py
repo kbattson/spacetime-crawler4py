@@ -31,27 +31,27 @@ def extract_next_links(url, resp):
     #         resp.raw_response.content: the content of the page!
 
     with sqlite3.connect('crawler_data.db') as conn:
-
         if resp.status == 200 and resp.raw_response and resp.raw_response.content:
             try:
                 pagedata.store_page(conn, resp.url, resp.raw_response.content)
                 
                 soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
-                urls = [urljoin(url, urldefrag(a['href'])[0]) for a in soup.find_all('a', href=True)]
-                urls = [url.lower() for url in urls]
-                urls = [url[:url.find('?')] for url in urls] # strip query
-
-                seen_last_bits = set()
-                unique_urls = []
-
-                for url in urls:
-                    last_bit = url.split('/')[-1]
-                    if last_bit not in seen_last_bits:
-                        seen_last_bits.add(last_bit)
-                        unique_urls.append(url)
-
-                urls = unique_urls
-               
+                urls = set()  # Use a set to automatically deduplicate
+                
+                for a in soup.find_all('a', href=True):
+                    # Join with base URL and defrag
+                    joined_url = urljoin(url, urldefrag(a['href'])[0])
+                    # Normalize the URL
+                    parsed = urlparse(joined_url)
+                    # Remove parameters and fragments keep only scheme netloc and path
+                    clean_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+                    # Strip ending slash
+                    if clean_url.endswith('/'):
+                        clean_url = clean_url[:-1]
+                    # Check for truncated versions
+                    if not any(clean_url.startswith(u) or u.startswith(clean_url) for u in urls):
+                        urls.add(clean_url.lower())
+                
                 return [url for url in urls if not pagedata.is_visited(conn, url) 
                         and not pagedata.is_blacklisted(conn, url)]
 
