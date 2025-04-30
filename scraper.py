@@ -106,7 +106,7 @@ def is_valid(url):
         if 'account' in netloc or 'git' in netloc or 'login' in netloc:
             return False
 
-        if netloc.startswith('fano') or netloc.startswith('swiki'):
+        if netloc.startswith('fano') or netloc.startswith('swiki') or netloc.startswith('helpdesk'):
             return False
 
         date_pattern = r'/(19|20)\d{2}[-/](0[1-9]|1[0-2])([-/](0[1-9]|[12][0-9]|3[01]))?/'
