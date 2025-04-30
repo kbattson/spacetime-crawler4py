@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import pagedata
 import sqlite3
 
+
 #TODO
 '''
 - implement politeness delays, might be included in base crawler not sure
@@ -102,7 +103,18 @@ def is_valid(url):
                 (netloc == 'today.uci.edu' and path.startswith('/department/information_computer_sciences'))):
                 return False
 
-        if 'account' in netloc:
+        if 'account' in netloc or 'git' in netloc or 'login' in netloc:
+            return False
+
+        if netloc.startswith('fano') or netloc.startswith('swiki') or netloc.startswith('helpdesk') or netloc.startswith('grape'):
+            return False
+
+        date_pattern = r'/(19|20)\d{2}[-/](0[1-9]|1[0-2])([-/](0[1-9]|[12][0-9]|3[01]))?/'
+        if re.search(date_pattern, path):
+            return False
+
+        login_signup_pattern = r'/login|signin|signup|register|forgot|reset|change|update|delete|logout'
+        if re.search(login_signup_pattern, path):
             return False
         
         return not re.match(
@@ -119,12 +131,15 @@ def is_valid(url):
             # apk is android something something 
             # pd = pure datak
             # jp = jpeg
-            + r"|mpg|lif|apk|pd|jp)$"
+            # ppsx is mc powerpoint
+            # bam is Binary Alignment Map
+            + r"|mpg|lif|apk|pd|jp|img|ppsx|ipynb|bib|bam)$"
             , parsed.path.lower())
 
     except TypeError:
         print ("TypeError for ", parsed)
         raise
+
 
 
 
