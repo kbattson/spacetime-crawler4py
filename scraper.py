@@ -117,6 +117,9 @@ def is_valid(url):
         if re.search(login_signup_pattern, path):
             return False
         
+        split_path = netloc.path.split('/')
+        return len(split_path) == len(set(split_path))
+        
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
