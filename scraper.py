@@ -118,7 +118,9 @@ def is_valid(url):
             return False
         
         split_path = netloc.path.split('/')
-        return len(split_path) == len(set(split_path))
+        if len(split_path) != len(set(split_path)):
+            return False
+
         
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
