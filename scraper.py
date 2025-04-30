@@ -117,7 +117,7 @@ def is_valid(url):
         if re.search(login_signup_pattern, path):
             return False
         
-        split_path = parsed.netloc.path.split('/')
+        split_path = parsed.path.split('/')
         if len(split_path) != len(set(split_path)):
             return False
 
