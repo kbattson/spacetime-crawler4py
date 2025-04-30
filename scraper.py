@@ -129,7 +129,8 @@ def is_valid(url):
             # pd = pure datak
             # jp = jpeg
             # ppsx is mc powerpoint
-            + r"|mpg|lif|apk|pd|jp|img|ppsx|ipynb|bib)$"
+            # bam is Binary Alignment Map
+            + r"|mpg|lif|apk|pd|jp|img|ppsx|ipynb|bib|bam)$"
             , parsed.path.lower())
 
     except TypeError:
