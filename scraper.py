@@ -106,13 +106,16 @@ def is_valid(url):
         if 'account' in netloc or 'git' in netloc or 'login' in netloc:
             return False
 
-        if netloc.startswith('fano') or netloc.startswith('swiki') or netloc.startswith('helpdesk'):
+        if netloc.startswith('fano') or netloc.startswith('swiki') or netloc.startswith('helpdesk') or netloc.startswith('grape'):
             return False
 
         date_pattern = r'/(19|20)\d{2}[-/](0[1-9]|1[0-2])([-/](0[1-9]|[12][0-9]|3[01]))?/'
         if re.search(date_pattern, path):
             return False
 
+        login_signup_pattern = r'/login|signin|signup|register|forgot|reset|change|update|delete|logout'
+        if re.search(login_signup_pattern, path):
+            return False
         
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
