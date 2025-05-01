@@ -118,7 +118,7 @@ def is_valid(url):
             return False
         
         split_path = parsed.path.split('/')
-        if len(split_path) != len(set(split_path)) and len(split_path) > 2:
+        if len(split_path) != len(set(split_path)) and len(split_path) > 8:
             return False
 
         
