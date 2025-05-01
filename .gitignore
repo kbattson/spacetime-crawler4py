@@ -5,7 +5,6 @@ __pycache__/
 
 # C extensions
 *.so
-
 # Distribution / packaging
 .Python
 build/
@@ -108,5 +107,3 @@ venv.bak/
 *.full.py
 *.shelve
 *.db
-
-

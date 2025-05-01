@@ -1,5 +1,5 @@
 import re
-from urllib.parse import urlparse, urljoin, urldefrag
+from urllib.parse import urlparse, urljoin, urldefrag, parse_qs, urlencode, urlunparse
 from bs4 import BeautifulSoup
 import pagedata
 import sqlite3
@@ -22,9 +22,27 @@ def scraper(url, resp):
 
 def normalize_url(url):
     url, _ = urldefrag(url)
-    url = url.lower()
-    if '?' in url:
-        url = url[:url.find('?')]
+    parsed = urlparse(url.lower())
+    
+    # query parameters to block
+    blocked_params = {'next', 'action', 'share', 'ical', 'outlook-ical', 'tribe-bar-date', 'redirect', 'redirect-to','c', 'o', 'difftype', 'do', 'rev', 'rev2'}
+    
+    if parsed.query:
+        query_dict = parse_qs(parsed.query)
+        # filter queries and check for array parameters
+        filtered_params = {k: v for k, v in query_dict.items() 
+                         if k not in blocked_params and 
+                         not any(param in k for param in blocked_params)}
+        # rebuild url
+        new_query = urlencode(filtered_params, doseq=True) if filtered_params else ''
+        return urlunparse((
+            parsed.scheme,
+            parsed.netloc,
+            parsed.path,
+            parsed.params,
+            new_query,
+            ''
+        ))
     return url
 
 previous_call_urls = []
@@ -95,14 +113,35 @@ def is_valid(url):
         netloc = parsed.netloc.lower()
         path = parsed.path.lower()
         
+        paths = path.split('/')
+        if len(paths) > 10 and len(paths) != len(set(paths)):
+            return False
+        
+        # blocked domains
+        blocked_domains = ['grape.ics.uci.edu', 'helpdesk.ics.uci.edu', 'swiki.ics.uci.edu', 'sli.ics.uci.edu']
+        if netloc in blocked_domains:
+            return False
+        
+        # check if path has a valid date
+        date_pattern = r'/(19|20)\d{2}[-/](0[1-9]|1[0-2])([-/](0[1-9]|[12][0-9]|3[01]))?/'
+        if re.search(date_pattern, path):
+            return False
+        
+        # check if path is a longin signin signup
+        login_signup_pattern = r'/login|signin|signup|register|log-in|sign-in|sign-up|logout|log-out|register|wp-login'
+        if re.search(login_signup_pattern, path):
+            return False
+        
         if not (netloc.endswith('.ics.uci.edu') or
                 netloc.endswith('.cs.uci.edu') or
                 netloc.endswith('.informatics.uci.edu') or
                 netloc.endswith('.stat.uci.edu') or
                 (netloc == 'today.uci.edu' and path.startswith('/department/information_computer_sciences'))):
-                return False
+            return False
 
-        if 'account' in netloc:
+        # netloc blacklist
+        netloc_blacklist = ['account', 'git', 'login', 'signin', 'signup', 'register', 'fano']
+        if any(blacklist_word in netloc for blacklist_word in netloc_blacklist):
             return False
         
         return not re.match(
@@ -119,7 +158,9 @@ def is_valid(url):
             # apk is android something something 
             # pd = pure datak
             # jp = jpeg
-            + r"|mpg|lif|apk|pd|jp)$"
+            # ppsx is mc powerpoint
+            # bam is Binary Alignment Map
+            + r"|mpg|lif|apk|pd|jp|img|ppsx|ipynb|bib|bam)$"
             , parsed.path.lower())
 
     except TypeError:
